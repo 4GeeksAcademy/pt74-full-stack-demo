@@ -2,7 +2,7 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 from flask import Flask, request, jsonify, url_for, Blueprint
-from api.models import db, User
+from api.models import db, Book, Author
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
 
@@ -12,11 +12,31 @@ api = Blueprint('api', __name__)
 CORS(api)
 
 
-@api.route('/hello', methods=['POST', 'GET'])
-def handle_hello():
+@api.route("/authors", methods=["GET"])
+def get_authors():
+    authors = Author.query.all()
+    return jsonify({
+        "count": len(authors),
+        "authors": [author.serialize() for author in authors]
+    })
 
-    response_body = {
-        "message": "Hello! I'm a message that came from the backend, check the network tab on the google inspector and you will see the GET request"
-    }
 
-    return jsonify(response_body), 200
+@api.route("/authors/<int:id>", methods=["GET"])
+def get_author(id: int):
+    author = Author.query.filter_by(id=id).first()
+    return jsonify(author.serialize())
+
+
+@api.route("/books", methods=["GET"])
+def get_books():
+    books = Book.query.all()
+    return jsonify({
+        "count": len(books),
+        "books": [book.serialize() for book in books]
+    })
+
+
+@api.route("/books/<int:id>", methods=["GET"])
+def get_book(id: int):
+    book = Book.query.filter_by(id=id).first()
+    return jsonify(book.serialize())
