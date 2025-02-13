@@ -50,6 +50,22 @@ class User(db.Model):
         }
 
 
+book_to_author = db.Table(
+    "book_to_author",
+    db.metadata,
+    db.Column(
+        "book_id",
+        db.Integer,
+        db.ForeignKey('book.id')
+    ),
+    db.Column(
+        "author_id",
+        db.Integer,
+        db.ForeignKey('author.id')
+    ),
+)
+
+
 class Book(db.Model):
     __tablename__ = "book"
     id = db.Column(
@@ -58,13 +74,14 @@ class Book(db.Model):
     )
 
     # author_id = db.Column(db.Integer, db.ForeignKey("author.id"))
-    # author = db.relationship(
-    #     "Author",
-    #     backref=db.backref(
-    #         "books",
-    #         uselist=True,
-    #     ),
-    # )
+    authors = db.relationship(
+        "Author",
+        backref=db.backref(
+            "books",
+            uselist=True,
+        ),
+        secondary=book_to_author,
+    )
 
     title = db.Column(
         db.Text,
@@ -102,31 +119,6 @@ class Book(db.Model):
             "have_read": self.have_read,
             "is_awesome": self.is_awesome,
         }
-    
-
-class AuthorToBook(db.Model):
-    __tablename__ = "author_to_book"
-    id = db.Column(
-        db.Integer,
-        primary_key=True,
-    )
-
-    author_id = db.Column(db.Integer, db.ForeignKey("author.id"))
-    author = db.relationship(
-        "Author",
-        backref=db.backref(
-            "books",
-            uselist=True,
-        ),
-    )
-    book_id = db.Column(db.Integer, db.ForeignKey("book.id"))
-    books = db.relationship(
-        "Book",
-        backref=db.backref(
-            "authors",
-            uselist=True,
-        ),
-    )
 
 
 class Author(db.Model):
@@ -139,9 +131,6 @@ class Author(db.Model):
     name = db.Column(
         db.String(256),
     )
-    # There is a secret "books" property added by
-    # the backref of the relationship.  Pretend
-    # you can see it and you'll be fine.
 
     def __repr__(self):
         return f"<Author: {self.name}>"
