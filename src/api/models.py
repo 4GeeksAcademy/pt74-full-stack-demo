@@ -57,14 +57,15 @@ class Book(db.Model):
         primary_key=True,
     )
 
-    author_id = db.Column(db.Integer, db.ForeignKey("author.id"))
-    author = db.relationship(
-        "Author",
-        backref=db.backref(
-            "books",
-            uselist=True,
-        ),
-    )
+    # author_id = db.Column(db.Integer, db.ForeignKey("author.id"))
+    # author = db.relationship(
+    #     "Author",
+    #     backref=db.backref(
+    #         "books",
+    #         uselist=True,
+    #     ),
+    # )
+
     title = db.Column(
         db.Text,
         nullable=False,
@@ -93,7 +94,7 @@ class Book(db.Model):
     def serialize(self):
         return {
             "id": self.id,
-            "author": f"{BACKEND_URL}api/authors/{self.author.id}",
+            # "author": f"{BACKEND_URL}api/authors/{self.author.id}",
             "title": self.title,
             "isbn10": self.isbn10,
             "isbn13": self.isbn13,
@@ -101,6 +102,31 @@ class Book(db.Model):
             "have_read": self.have_read,
             "is_awesome": self.is_awesome,
         }
+    
+
+class AuthorToBook(db.Model):
+    __tablename__ = "author_to_book"
+    id = db.Column(
+        db.Integer,
+        primary_key=True,
+    )
+
+    author_id = db.Column(db.Integer, db.ForeignKey("author.id"))
+    author = db.relationship(
+        "Author",
+        backref=db.backref(
+            "books",
+            uselist=True,
+        ),
+    )
+    book_id = db.Column(db.Integer, db.ForeignKey("book.id"))
+    books = db.relationship(
+        "Book",
+        backref=db.backref(
+            "authors",
+            uselist=True,
+        ),
+    )
 
 
 class Author(db.Model):
@@ -124,5 +150,5 @@ class Author(db.Model):
         return {
             "id": self.id,
             "name": self.name,
-            "books": [f"{BACKEND_URL}api/books/{book.id}" for book in self.books], 
+            # "books": [f"{BACKEND_URL}api/books/{book.id}" for book in self.books],
         }
