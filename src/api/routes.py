@@ -2,14 +2,55 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 from flask import Flask, request, jsonify, url_for, Blueprint
-from api.models import db, Book, Author
+from api.models import db, Book, Author, User
 from api.utils import generate_sitemap, APIException
 from flask_cors import CORS
+
+from flask_jwt_extended import (
+    create_access_token,
+    get_jwt_identity,
+    jwt_required,
+)
 
 api = Blueprint('api', __name__)
 
 # Allow CORS requests to this API
 CORS(api)
+
+
+@api.route("/login", methods=["POST"])
+def login():
+    """
+    POST:
+    {
+        "email": str,
+        "password": str
+    }
+    """
+    body = request.get_json(force=True)
+
+    user = User.query.filter_by(email=body.get("email")).first()
+
+    if (
+        not user or
+        not user.check_password(body.get("password"))
+    ):
+        return jsonify(
+            msg="Invalid email or password."
+        ), 400
+
+    return jsonify(
+        token=create_access_token(
+            identity=user
+        )
+    )
+
+@api.route("/protected", methods=["GET"])
+@jwt_required()
+def protected():
+    return jsonify(
+        identity=get_jwt_identity()
+    )
 
 
 @api.route("/authors", methods=["GET"])
