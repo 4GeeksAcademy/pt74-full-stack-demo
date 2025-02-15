@@ -10,6 +10,7 @@ from flask_jwt_extended import (
     create_access_token,
     get_jwt_identity,
     jwt_required,
+    current_user,
 )
 
 api = Blueprint('api', __name__)
@@ -45,12 +46,75 @@ def login():
         )
     )
 
+
+@api.route("/signup", methods=["POST"])
+def signup():
+    """
+    POST:
+    {
+        "email": str,
+        "password": str
+    }
+
+    Response:
+    {
+        "id": int,
+        "email": str,
+        "fav_authors": Author[],
+	    "fav_books": Book[]
+    }
+    """
+    body = request.get_json(force=True)
+
+    user = User.query.filter_by(email=body.get("email")).first()
+
+    if user:
+        return jsonify(
+            msg="User already exists with this email."
+        ), 400
+    
+    user = User(**body)
+
+    db.session.add(user)
+    db.session.commit()
+    db.session.refresh(user)
+
+    return jsonify(user.serialize())
+
+
 @api.route("/protected", methods=["GET"])
 @jwt_required()
 def protected():
     return jsonify(
         identity=get_jwt_identity()
     )
+
+
+@api.route("/users", methods=["GET"])
+def read_users():
+    users = User.query.all()
+    return jsonify({
+        "count": len(users),
+        "authors": [user.serialize() for user in users],
+    })
+
+
+@api.route("/user/fav-book/<int:book_id>", methods=["PUT", "POST"])
+@jwt_required()
+def add_favorite_book(book_id: int):
+    book = Book.query.filter_by(id=book_id).first()
+
+    if not book:
+        return jsonify(
+            msg=f"Book with ID {book_id} does not exist.",
+        )
+    
+    current_user.fav_books.append(book)
+    db.session.merge(current_user)
+    db.session.commit()
+    db.session.refresh(current_user)
+
+    return jsonify(current_user.serialize())
 
 
 @api.route("/authors", methods=["GET"])
